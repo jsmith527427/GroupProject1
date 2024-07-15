@@ -1,136 +1,153 @@
 import pygame
 import sys
-import random
 
 pygame.init()
 
-SCREEN_WIDTH = 900
-SCREEN_HEIGHT = 600
-PADDLE_WIDTH = 100
-PADDLE_HEIGHT = 20
-BALL_SIZE = 20
-BRICK_WIDTH = 75
-BRICK_HEIGHT = 30
-FPS = 60
+#Initializing all constants
+screen_width = 900
+screen_height = 600
+paddle_width = 100
+paddle_height = 20
+ball_size = 20
+brick_width = 75
+brick_height = 30
+fps = 60
 
-BLACK = (0, 0, 0)
-WHITE = (255, 255, 255)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
-
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+#Set the screen size and the caption
+screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("Block Breaker")
 
-background = pygame.Surface(screen.get_size())
-background = background.convert()
-background.fill(BLACK)
+#The background needs to be the same size and black
+background = pygame.Surface((screen_width, screen_height))
+background.fill((0, 0, 0))
 
+#these are all the images and scaling the images so they dont cover the whole screen
 paddle_image = pygame.image.load('paddle.png').convert_alpha()
-paddle_image = pygame.transform.scale(paddle_image, (PADDLE_WIDTH, PADDLE_HEIGHT))
-
+paddle_image = pygame.transform.scale(paddle_image, (paddle_width, paddle_height))
 ball_image = pygame.image.load('ball.png').convert_alpha()
-ball_image = pygame.transform.scale(ball_image, (BALL_SIZE, BALL_SIZE))
-
+ball_image = pygame.transform.scale(ball_image, (ball_size, ball_size))
 brick_image = pygame.image.load('brick.png').convert_alpha()
-brick_image = pygame.transform.scale(brick_image, (BRICK_WIDTH, BRICK_HEIGHT))
+brick_image = pygame.transform.scale(brick_image, (brick_width, brick_height))
 
+#The two required sounds, bringing total called files to 5
 bounce_sound = pygame.mixer.Sound('bounce.mp3')
 break_sound = pygame.mixer.Sound('break.mp3')
 
-class Paddle(pygame.sprite.Sprite):
+#Defining the paddle for the game
+class Paddle:
+    #Initializing the starts
     def __init__(self):
-        super().__init__()
         self.image = paddle_image
         self.rect = self.image.get_rect()
-        self.rect.x = (SCREEN_WIDTH - PADDLE_WIDTH) // 2
-        self.rect.y = SCREEN_HEIGHT - PADDLE_HEIGHT - 10
-        self.speed = 10
+        self.rect.x = (screen_width - paddle_width) // 2 #center it
+        self.rect.y = screen_height - paddle_height - 10 #put near bottom
+        self.speed = 10 #speed
 
-    def update(self):
+    #Defining how you move.
+    def move(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
+        if keys[pygame.K_LEFT]: #move left
             self.rect.x -= self.speed
-        if keys[pygame.K_RIGHT]:
+        if keys[pygame.K_RIGHT]:#move right
             self.rect.x += self.speed
+        # if it touches either side, it is reset to a position within the screen.
         if self.rect.x < 0:
             self.rect.x = 0
-        if self.rect.x > SCREEN_WIDTH - PADDLE_WIDTH:
-            self.rect.x = SCREEN_WIDTH - PADDLE_WIDTH
+        if self.rect.x > screen_width - paddle_width:
+            self.rect.x = screen_width - paddle_width
 
-class Ball(pygame.sprite.Sprite):
+#Defining the bacll
+class Ball:
+    #Initialization
     def __init__(self):
-        super().__init__()
         self.image = ball_image
         self.rect = self.image.get_rect()
-        self.rect.x = (SCREEN_WIDTH - BALL_SIZE) // 2
-        self.rect.y = SCREEN_HEIGHT // 2
-        self.speed_x = random.choice([-5, 5])
-        self.speed_y = -5
+        self.rect.x = (screen_width - ball_size) // 2 #center it
+        self.rect.y = screen_height // 2 #center it again
+        self.speed_x = 3 #horitontal speed
+        self.speed_y = -5 #vertical speed
 
-    def update(self):
+    #it will start in the middle and move in all 4 directions.
+    def move(self):
+        #update balls position
         self.rect.x += self.speed_x
         self.rect.y += self.speed_y
-        if self.rect.x <= 0 or self.rect.x >= SCREEN_WIDTH - BALL_SIZE:
+        #if it hites the walls it changes direction
+        if self.rect.x <= 0 or self.rect.x >= screen_width - ball_size:
             self.speed_x = -self.speed_x
             bounce_sound.play()
+        #if it hits the cieling it changes direction
         if self.rect.y <= 0:
             self.speed_y = -self.speed_y
             bounce_sound.play()
 
-class Brick(pygame.sprite.Sprite):
+#simple brick inititation
+class Brick:
     def __init__(self, x, y):
-        super().__init__()
         self.image = brick_image
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
 
+#Making the objects
 paddle = Paddle()
 ball = Ball()
+bricks = []
 
-all_sprites = pygame.sprite.Group()
-bricks = pygame.sprite.Group()
+#Putting it all into a list for easier updating later
+all_sprites = []
+all_sprites.append(paddle)
+all_sprites.append(ball)
 
-all_sprites.add(paddle)
-all_sprites.add(ball)
-
-for row in range(5):
-    for col in range(10):
-        brick = Brick(col * (BRICK_WIDTH + 5) + 35, row * (BRICK_HEIGHT + 5) + 35)
-        all_sprites.add(brick)
-        bricks.add(brick)
+#create the bricks and add to list
+for row in range(5): #5 rows
+    for col in range(10): #10 collumns
+        brick = Brick(col * (brick_width +5) + 35, row * (brick_height + 5) + 35)
+        all_sprites.append(brick)
+        bricks.append(brick)
 
 clock = pygame.time.Clock()
 running = True
 
 while running:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT: #quit game
             running = False
         elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
+            if event.key == pygame.K_ESCAPE: #alternate quit game using esc
                 running = False
 
-    all_sprites.update()
+    #update all sprites (using sprites as terminology for interactable surface)
+    for sprites in all_sprites:
+        if hasattr(sprites, 'move'):
+            sprites.move()
 
-    if pygame.sprite.collide_rect(ball, paddle):
-        ball.speed_y = -ball.speed_y
-        bounce_sound.play()
+    #check for collision for ball and paddle
+    if ball.rect.colliderect(paddle.rect):
+        ball.speed_y = -ball.speed_y #bounce it off the paddle
+        bounce_sound.play() #boioioioioing
 
-    brick_collisions = pygame.sprite.spritecollide(ball, bricks, True)
-    if brick_collisions:
-        ball.speed_y = -ball.speed_y
-        break_sound.play()
+    #check for collision for ball and bricks
+    for brick in bricks:
+        if ball.rect.colliderect(brick.rect):
+            bricks.remove(brick) #remove the brick from the list
+            all_sprites.remove(brick) #remove brick from sprite list
+            ball.speed_y = -ball.speed_y #bounce brick off
+            break_sound.play()
+            break
 
-    if ball.rect.y > SCREEN_HEIGHT:
-        running = False  # Lose condition
+    #if ball falls to bottom, lose
+    if ball.rect.y > screen_height:
+        running = False
 
+    #draw everything (this is why i put it in a list, this is way easier than doing everyhting individually)
     screen.blit(background, (0, 0))
-    all_sprites.draw(screen)
+    for sprites in all_sprites:
+        screen.blit(sprites.image, sprites.rect)
 
+    #update the screen
     pygame.display.flip()
-    clock.tick(FPS)
+    clock.tick(fps)
 
 pygame.quit()
 sys.exit()
